@@ -1,5 +1,7 @@
 package com.springernature.http4k.dust
 
+import com.springernature.dust.Dust
+import com.springernature.dust.loadFromFilesIn
 import java.io.File
 
 fun main(args: Array<String>) {

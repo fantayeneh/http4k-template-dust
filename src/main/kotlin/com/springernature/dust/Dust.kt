@@ -1,4 +1,4 @@
-package com.springernature.http4k.dust
+package com.springernature.dust
 
 import jdk.nashorn.api.scripting.JSObject
 import org.apache.commons.pool2.BasePooledObjectFactory
@@ -22,7 +22,7 @@ private class SingleThreadedDust(
     private val dust = loadDust()
     
     private fun loadDust(): JSObject {
-        javaClass.getResourceAsStream("/dust-full-2.7.5.js").reader().use(js::eval)
+        javaClass.getResourceAsStream("dust-full-2.7.5.js").reader().use(js::eval)
         js.eval(
             //language=JavaScript
             """

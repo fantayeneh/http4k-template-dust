@@ -1,4 +1,4 @@
-package com.springernature.http4k.dust
+package com.springernature.dust
 
 import java.io.File
 

@@ -1,3 +1,3 @@
-package com.springernature.http4k.dust
+package com.springernature.dust
 
 typealias TemplateLoader = (String) -> String
