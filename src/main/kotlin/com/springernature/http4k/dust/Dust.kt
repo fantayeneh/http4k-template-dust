@@ -1,35 +1,45 @@
 package com.springernature.http4k.dust
 
+import jdk.nashorn.api.scripting.JSObject
+import org.apache.commons.pool2.BasePooledObjectFactory
+import org.apache.commons.pool2.PooledObject
+import org.apache.commons.pool2.impl.DefaultPooledObject
+import org.apache.commons.pool2.impl.GenericObjectPool
 import java.io.StringWriter
+import javax.script.ScriptEngine
 import javax.script.ScriptEngineManager
 import javax.script.SimpleBindings
 
 // For threading and Nashorn, see https://stackoverflow.com/a/30159424
 
-class Dust(private val cacheTemplates: Boolean = true, private val loader: (String) -> String) {
-    constructor(loader: (String) -> String): this(cacheTemplates = false, loader = loader)
-    
-    private val js = ScriptEngineManager().apply {
-        bindings = SimpleBindings(mapOf("loader" to loader))
-    }.getEngineByName("nashorn")
+// Must only be used on one thread.
+private class SingleThreadedDust(
+    private val js: ScriptEngine,
+    private val cacheTemplates: Boolean = true,
+    private val notifyOnClosed: (SingleThreadedDust) -> Unit
+) : Templates {
     
     private val dust = loadDust()
     
-    private fun loadDust(): Any {
+    private fun loadDust(): JSObject {
         javaClass.getResourceAsStream("/dust-full-2.7.5.js").reader().use(js::eval)
-        js.eval("dust.config.cache = ${cacheTemplates};")
         js.eval(
             //language=JavaScript
             """
+            dust.config.cache = ${cacheTemplates};
             dust.onLoad = function(templateName, callback) {
                 callback(null, loader.invoke(templateName));
             }
             """)
         
-        return js["dust"] ?: throw IllegalStateException("could not initialise Dust")
+        return js["dust"] as? JSObject ?: throw IllegalStateException("could not initialise Dust")
     }
     
-    operator fun get(templateName: String): Template =
+    override fun close() {
+        notifyOnClosed(this)
+    }
+    
+    override fun get(templateName: String): Template =
         fun(params: Any) =
             expandTemplate(templateName, params)
     
@@ -57,4 +67,30 @@ class Dust(private val cacheTemplates: Boolean = true, private val loader: (Stri
         
         return writer.toString()
     }
+}
+
+
+class Dust(private val cacheTemplates: Boolean, loader: TemplateLoader) {
+    constructor(loader: TemplateLoader) : this(cacheTemplates = true, loader = loader)
+    
+    private val scriptEngineManager = ScriptEngineManager().apply {
+        bindings = SimpleBindings(mapOf("loader" to loader))
+    }
+    
+    private val pool = GenericObjectPool<SingleThreadedDust>(object : BasePooledObjectFactory<SingleThreadedDust>() {
+        override fun create(): SingleThreadedDust {
+            return SingleThreadedDust(scriptEngineManager.getEngineByName("nashorn"), cacheTemplates, { returnDustEngine(it) })
+        }
+        
+        override fun wrap(obj: SingleThreadedDust): PooledObject<SingleThreadedDust> {
+            return DefaultPooledObject(obj)
+        }
+    })
+    
+    private fun returnDustEngine(dustEngine: SingleThreadedDust) {
+        pool.returnObject(dustEngine)
+    }
+    
+    fun openTemplates(): Templates =
+        pool.borrowObject()
 }

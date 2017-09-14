@@ -23,6 +23,7 @@ dependencies {
     compile group: "org.jetbrains.kotlin", name: "kotlin-stdlib-jre8", version: kotlin_version
     compile group: "org.http4k", name: "http4k-core", version: http4k_version
     compile group: "org.http4k", name: "http4k-template-handlebars", version: http4k_version
+    compile group: "org.apache.commons", name: "commons-pool2", version: "2.4.2"
 }
 
 compileKotlin {
