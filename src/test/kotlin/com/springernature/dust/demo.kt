@@ -1,4 +1,4 @@
-package com.springernature.http4k.dust
+package com.springernature.dust
 
 import com.springernature.dust.Dust
 import com.springernature.dust.loadFromFilesIn

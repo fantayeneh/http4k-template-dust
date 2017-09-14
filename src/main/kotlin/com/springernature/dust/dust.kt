@@ -10,13 +10,21 @@ import javax.script.ScriptEngine
 import javax.script.ScriptEngineManager
 import javax.script.SimpleBindings
 
-// For threading and Nashorn, see https://stackoverflow.com/a/30159424
+typealias TemplateLoader = (templateName: String) -> String
+
+typealias Template = (parameters: Any) -> String
+
+interface Templates: AutoCloseable {
+    operator fun get(templateName: String): Template
+}
+
 
 // Must only be used on one thread.
 private class SingleThreadedDust(
     private val js: ScriptEngine,
     private val cacheTemplates: Boolean = true,
     private val notifyOnClosed: (SingleThreadedDust) -> Unit
+
 ) : Templates {
     
     private val dust: JSObject = run {
