@@ -99,4 +99,7 @@ class Dust(private val cacheTemplates: Boolean, loader: TemplateLoader) {
     
     fun openTemplates(): Templates =
         pool.borrowObject()
+    
+    inline fun <T> withTemplates(block: (Templates)->T): T =
+        openTemplates().use(block)
 }
