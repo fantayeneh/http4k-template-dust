@@ -19,20 +19,18 @@ private class SingleThreadedDust(
     private val notifyOnClosed: (SingleThreadedDust) -> Unit
 ) : Templates {
     
-    private val dust = loadDust()
-    
-    private fun loadDust(): JSObject {
+    private val dust: JSObject = run {
         javaClass.getResourceAsStream("dust-full-2.7.5.js").reader().use(js::eval)
         js.eval(
             //language=JavaScript
             """
-            dust.config.cache = ${cacheTemplates};
+            dust.config.cache = $cacheTemplates;
             dust.onLoad = function(templateName, callback) {
                 callback(null, loader.invoke(templateName));
             }
             """)
         
-        return js["dust"] as? JSObject ?: throw IllegalStateException("could not initialise Dust")
+        js["dust"] as? JSObject ?: throw IllegalStateException("could not initialise Dust")
     }
     
     override fun close() {
