@@ -4,15 +4,10 @@ import java.io.StringWriter
 import javax.script.ScriptEngineManager
 import javax.script.SimpleBindings
 
-
-data class Named(val name: String)
-
 // For threading and Nashorn, see https://stackoverflow.com/a/30159424
 
-typealias Template = (Any) -> String
-
 class Dust(private val cacheTemplates: Boolean = true, private val loader: (String) -> String) {
-    constructor(loader: (String) -> String): this(false, loader)
+    constructor(loader: (String) -> String): this(cacheTemplates = false, loader = loader)
     
     private val js = ScriptEngineManager().apply {
         bindings = SimpleBindings(mapOf("loader" to loader))
@@ -63,5 +58,3 @@ class Dust(private val cacheTemplates: Boolean = true, private val loader: (Stri
         return writer.toString()
     }
 }
-
-
